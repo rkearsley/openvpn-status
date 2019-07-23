@@ -7,7 +7,8 @@ const mkClient = client => ({
   connected: client['Connected Since (time_t)'],
   seen: client['Last Ref (time_t)'],
   pub: client['Real Address'].split(':')[0],
-  vpn: client['Virtual Address'],
+  tun: client['Virtual Address'],
+  net: client['Network'] || "",
   received: client['Bytes Received'],
   sent: client['Bytes Sent']
 })
@@ -26,9 +27,14 @@ class client extends EventEmitter {
     this.clients = new Map()
     this.socket = new net.Socket()
     this.connected = false
+    this.buffer = ""
     this.socket.on('data', data => {
-      const items = data.toString().split('\r\n').filter(itm => itm.length)
-      items.forEach(itm => this.procData(itm.toString()))
+      this.buffer = this.buffer + data.toString()
+      if (this.buffer.endsWith("\r\n")) {
+        const items = this.buffer.split('\r\n').filter(itm => itm.length)
+        items.forEach(itm => this.procData(itm.toString()))
+	this.buffer = ""
+      }
     })
     this.socket.on('error', () => {
       this.connected = false
@@ -57,16 +63,23 @@ class client extends EventEmitter {
       const props = data.split('\t').slice(2, data.length + 1)
       this.clientProps = props
     } else if (data.startsWith('CLIENT_LIST') && this.state === STATE.status) {
+      console.log(data)
       const props = data.split('\t').slice(1, data.length + 1)
       const vpnClient = {}
       this.clientProps.forEach((prop, idx) => vpnClient[prop] = prepProperty(props[idx]))
       if ((vpnClient['Common Name'] && vpnClient['Common Name'].length) || (vpnClient.Username && vpnClient.Username.length))
         this.clients.set(vpnClient['Client ID'], vpnClient)
     } else if (data.startsWith('ROUTING_TABLE') && this.state === STATE.status) {
+      console.log(data)
       const props = data.split('\t').slice(1, data.length + 1)
       this.clients.forEach(vpnClient => {
-        if (vpnClient['Real Address'] === props[this.clientProps.indexOf('Real Address')])
-          this.clientProps.forEach((prop, idx) => vpnClient[prop] = prepProperty(props[idx]))
+        if (vpnClient['Real Address'] === props[this.clientProps.indexOf('Real Address')]) {
+          this.clientProps.forEach((prop, idx) => {
+            if ((prop == 'Virtual Address') && props[idx].includes("/"))  {
+	            vpnClient['Network'] = prepProperty(props[idx])
+            }
+          })
+        }
       })
     } else if (data.startsWith('END') && this.state === STATE.status) {
       oldClients.forEach((vpnClient, clientId) => {

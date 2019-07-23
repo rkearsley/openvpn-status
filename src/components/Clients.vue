@@ -17,7 +17,8 @@
           </v-tooltip>
         </td>
         <td class="text-xs-center">{{ props.item.node }}</td>
-        <td class="text-xs-center">{{ props.item.vpn }}</td>
+        <td class="text-xs-center">{{ props.item.net }}</td>
+        <td class="text-xs-center">{{ props.item.tun }}</td>
         <td class="text-xs-center"><a :href="`http://geoiplookup.net/ip/${props.item.pub}`" target="_blank">{{ props.item.pub }}</a></td>
         <td class="text-xs-center">
           <v-tooltip bottom>
@@ -141,10 +142,15 @@ export default {
         sortable: true,
         value: 'node'
       }, {
-        text: 'VPN IP',
+        text: 'Network',
         align: 'center',
         sortable: true,
-        value: 'vpn'
+        value: 'net'
+      }, {
+        text: 'Tunnel IP',
+        align: 'center',
+        sortable: true,
+        value: 'tun'
       }, {
         text: 'Public IP',
         align: 'center',
