@@ -8,7 +8,7 @@ const mkClient = client => ({
   seen: client['Last Ref (time_t)'],
   pub: client['Real Address'].split(':')[0],
   tun: client['Virtual Address'],
-  net: client['Network'] || "",
+  net: client.Network || '',
   received: client['Bytes Received'],
   sent: client['Bytes Sent']
 })
@@ -27,13 +27,13 @@ class client extends EventEmitter {
     this.clients = new Map()
     this.socket = new net.Socket()
     this.connected = false
-    this.buffer = ""
+    this.buffer = ''
     this.socket.on('data', data => {
       this.buffer = this.buffer + data.toString()
-      if (this.buffer.endsWith("\r\n")) {
+      if (this.buffer.endsWith('\r\n')) {
         const items = this.buffer.split('\r\n').filter(itm => itm.length)
         items.forEach(itm => this.procData(itm.toString()))
-	this.buffer = ""
+        this.buffer = ''
       }
     })
     this.socket.on('error', () => {
@@ -73,13 +73,11 @@ class client extends EventEmitter {
       console.log(data)
       const props = data.split('\t').slice(1, data.length + 1)
       this.clients.forEach(vpnClient => {
-        if (vpnClient['Real Address'] === props[this.clientProps.indexOf('Real Address')]) {
+        if (vpnClient['Real Address'] === props[this.clientProps.indexOf('Real Address')])
           this.clientProps.forEach((prop, idx) => {
-            if ((prop == 'Virtual Address') && props[idx].includes("/"))  {
-	            vpnClient['Network'] = prepProperty(props[idx])
-            }
+            if ((prop == 'Virtual Address') && props[idx].includes('/'))
+	            vpnClient.Network = prepProperty(props[idx])
           })
-        }
       })
     } else if (data.startsWith('END') && this.state === STATE.status) {
       oldClients.forEach((vpnClient, clientId) => {
